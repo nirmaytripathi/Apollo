@@ -2,21 +2,24 @@
 
 # 🔎 Apollo
 
-### Multi-agent deep research that proves every line, and admits what it cannot prove.
+### An agentic AI research system that proves every line, and admits what it cannot prove.
 
-Ask a question, paste a YouTube link or attach a PDF. Three AI agents plan, search and review; every sentence of the
-report cites a source Apollo actually read, and **code** checks every claim against an exact quote from that source.
+Ask a question, paste a YouTube link or attach a PDF. Three autonomous AI agents plan, call research tools, review
+their own coverage and loop back to fill gaps; every sentence of the report cites a source an agent actually read,
+and **code** checks every claim against an exact quote from that source.
 
+[![Agentic AI](https://img.shields.io/badge/Agentic%20AI-multi--agent-7B61FF)](#-agentic-ai-design)
+[![LangGraph](https://img.shields.io/badge/LangGraph-1.2-1C3C3C)](#-tech-stack)
+[![LLMs](https://img.shields.io/badge/LLMs-Groq%20%C2%B7%20Gemini-F55036)](#-tech-stack)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](#-tech-stack)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?logo=fastapi&logoColor=white)](#-tech-stack)
-[![LangGraph](https://img.shields.io/badge/LangGraph-1.2-1C3C3C)](#-tech-stack)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)](#-tech-stack)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](#-tech-stack)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)](#-tech-stack)
 [![Postgres](https://img.shields.io/badge/Neon-Postgres-4169E1?logo=postgresql&logoColor=white)](#-tech-stack)
 [![Tests](https://img.shields.io/badge/tests-237%20passing-2f9e6b)](#-testing)
 
-**[Live demo](https://apollo-innovista.onrender.com)** · **[Architecture](#-architecture)** · **[How verification works](#-claim-verification-the-core-idea)** · **[Run it locally](#-run-it-locally)**
+**[Live demo](https://apollo-innovista.onrender.com)** · **[Agentic design](#-agentic-ai-design)** · **[Architecture](#-architecture)** · **[How verification works](#-claim-verification-the-core-idea)** · **[Run it locally](#-run-it-locally)**
 
 </div>
 
@@ -26,13 +29,14 @@ report cites a source Apollo actually read, and **code** checks every claim agai
 
 | | |
 |---|---|
-| **What** | A full-stack research platform: question in, cited and fact-checked report out |
-| **Agents** | **Apollo** plans and writes · **Athena** searches and reads · **Hermes** reviews gaps and contradictions |
+| **What** | A multi-agent AI system for deep research: question in, cited and fact-checked report out |
+| **Agents** | **Apollo** plans and writes · **Athena** calls search tools and reads · **Hermes** reviews gaps and contradictions |
+| **Orchestration** | A LangGraph state machine with a review-and-retry loop, human-approval interrupts and stop rules in code |
 | **Core idea** | An LLM proposes a verdict and a quote; deterministic code accepts it only if the quote is really in the source |
 | **Inputs** | A research question, a YouTube link (up to 35 minutes), or up to 3 attached documents (PDF, .txt, .md) |
 | **Sources** | 6 research domains, each with a primary and a fallback API, plus a local cache |
 | **Models** | A 9-model fallback chain across Groq and Gemini: a spent quota moves the call to the next model |
-| **Stack** | Python 3.11 · FastAPI · LangGraph · React 18 · TypeScript · Tailwind 4 · Neon Postgres · Docker |
+| **Stack** | LangGraph · Groq / Gemini LLMs · sentence-transformers · Python 3.11 · FastAPI, with a React UI for the live run |
 | **Scale of the code** | ~6.6k lines of Python, ~5.5k lines of TypeScript/React, 237 automated tests |
 
 ---
@@ -55,6 +59,30 @@ simply filled a gap. Given a YouTube link, most assistants only see the title an
 | 🎥 **YouTube fact-check** | The video's spoken claims are checked against independent sources, each linked to the second it is said | Captions first, then a Gemini transcription; if neither works the run stops and says why, never guessing from the title |
 | 🧑‍⚖️ **Human in the loop** | Approve, edit or reject the plan and the follow-up searches before they run | LangGraph `interrupt()` pauses the graph; Pause / Resume / Stop & Edit keep or restart the run |
 | 🛟 **Never crashes a run** | A failed API, a busy model or an unreadable page becomes a warning, not an error page | Primary → fallback → cache for every source; a 9-model LLM chain; quota-aware cooldowns |
+
+---
+
+## 🧠 Agentic AI design
+
+Apollo is not one prompt to one model. It is a set of agents with separate roles, tools and limits, coordinated by
+a state machine. These are the agentic patterns it uses, and where each lives in the code:
+
+| Pattern | How Apollo uses it | Where |
+|---|---|---|
+| **Multi-agent roles** | Apollo (planner / manager / writer), Athena (researcher), Hermes (critic): each has its own prompt, inputs and output schema | `graph/nodes.py` |
+| **Planning** | The question is decomposed into 3-5 searchable sub-questions before any search runs | `apollo_plan` |
+| **Tool use** | Athena calls real tools: web search, 6 domain APIs (papers, medicine, statistics, news, code), page and PDF readers, YouTube transcripts | `tools/` |
+| **Tool routing** | Each query is classified by domain and sent to the right API, with a fallback API and a cache behind it | `tools/sources/router.py` |
+| **Reflection loop** | Hermes critiques the gathered evidence, names gaps and contradictions, and orders follow-up searches; the graph loops back for a second round | `hermes_review`, `decide` |
+| **Human in the loop** | LangGraph `interrupt()` pauses the graph so a person can approve, edit or reject the plan and the follow-up queries | `review_plan`, `review_gaps` |
+| **Guardrails in code, not prompts** | Stop rules, coverage targets, citation enforcement and the exact-quote check are deterministic code around the model | `_stop_reason`, `enforce_citations`, `quote_in` |
+| **Grounded generation** | Each section writer sees only the passages retrieved for its own sub-question; uncited sentences are removed; one writer per sub-question runs in parallel | `write_section` |
+| **Self-verification** | A separate verifier model judges every claim part against quoted evidence, and code rejects invented quotes | `verify/claims.py` |
+| **Model resilience** | A 9-model chain across two providers; a spent quota or a busy model hands the call to the next one | `core/llm.py` |
+| **Observability** | Every agent step, tool call, token count and timing is streamed live and kept per run | `reports/events.py`, `core/metering.py` |
+
+The web app (React) is the window onto this system: it shows each agent's state live, the approvals, and the
+evidence behind every claim.
 
 ---
 
@@ -314,12 +342,12 @@ phone-friendly responsive layout.
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18 · TypeScript (strict) · Vite 8 · Tailwind CSS 4 · react-markdown |
-| **Backend** | Python 3.11 · FastAPI · Uvicorn · Server-Sent Events |
 | **Agent orchestration** | LangGraph (StateGraph, checkpointer, interrupts) |
 | **LLMs** | Groq (gpt-oss-120b, gpt-oss-20b, …) · Google Gemini (3.x flash-lite, …) |
-| **Embeddings** | all-MiniLM-L6-v2 via sentence-transformers (local) or ONNX/fastembed (cloud) |
-| **Research sources** | Tavily · Serper · OpenAlex · Crossref · PubMed · Europe PMC · World Bank · IMF · Guardian · GitHub · Stack Exchange |
+| **Embeddings / retrieval** | all-MiniLM-L6-v2 via sentence-transformers (local) or ONNX/fastembed (cloud) |
+| **Agent tools (research sources)** | Tavily · Serper · OpenAlex · Crossref · PubMed · Europe PMC · World Bank · IMF · Guardian · GitHub · Stack Exchange |
+| **Backend** | Python 3.11 · FastAPI · Uvicorn · Server-Sent Events |
+| **Frontend** | React 18 · TypeScript (strict) · Vite 8 · Tailwind CSS 4 · react-markdown |
 | **Content extraction** | trafilatura (web) · pypdf (PDF) · youtube-transcript-api + Gemini (video) |
 | **Exports** | python-docx (Word) · Markdown · browser print (PDF) |
 | **Data** | SQLAlchemy Core · Neon Postgres (cloud) · SQLite (local) |
