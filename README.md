@@ -19,7 +19,7 @@ and **code** checks every claim against an exact quote from that source.
 [![Postgres](https://img.shields.io/badge/Neon-Postgres-4169E1?logo=postgresql&logoColor=white)](#-tech-stack)
 [![Tests](https://img.shields.io/badge/tests-237%20passing-2f9e6b)](#-testing)
 
-**[Live demo](https://apollo-innovista.onrender.com)** · **[Agentic design](#-agentic-ai-design)** · **[Architecture](#-architecture)** · **[How verification works](#-claim-verification-the-core-idea)** · **[Run it locally](#-run-it-locally)**
+**[Live demo](https://apollo-research.onrender.com)** · **[Agentic design](#-agentic-ai-design)** · **[Architecture](#-architecture)** · **[How verification works](#-claim-verification-the-core-idea)** · **[Run it locally](#-run-it-locally)**
 
 </div>
 
