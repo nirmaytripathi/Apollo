@@ -477,8 +477,14 @@ are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 <div align="center">
 
-**Built by** Sarthak Bhatt · [LinkedIn](https://www.linkedin.com/in/sarthak-bhatt-9b3767320) · [GitHub](https://github.com/S-2007)
+**Built by**
 
-<sub>Team: Nirmay Tripathi, Tushar Tiwari</sub>
+**Nirmay Tripathi**
+
+[LinkedIn](www.linkedin.com/in/nirmay-tripathi-0b4408377) · [GitHub](https://github.com/nirmaytripathi)
+
+**Team Members**
+
+Sarthak Bhatt · Tushar Tiwari
 
 </div>
