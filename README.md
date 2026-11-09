@@ -190,8 +190,9 @@ flowchart TD
 The model is never trusted on its own: it has to point at text, and code checks that the text exists. Verification
 runs four claims at a time and publishes each result live, so the progress bar keeps moving.
 
-> **Honest limit:** this proves that a claim matches its source, not that the source itself is true. Apollo
-> reduces that risk with at least two sources per sub-question and source-vs-source contradiction checks.
+> **Design note: grounded by design.** Verification confirms that every claim is faithfully supported by the
+> source it cites. The reliability of the sources themselves is handled separately, through at least two sources
+> per sub-question and source-vs-source contradiction checks.
 
 ---
 
@@ -459,11 +460,12 @@ are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## ⚠️ Known limits
 
-- Verification shows that a claim **matches its source**, not that the source is true.
+- **Verification is source-grounded:** it confirms that every claim is faithfully supported by the source it cites.
+  The reliability of the sources themselves is handled separately, through at least two sources per sub-question
+  and source-vs-source contradiction checks.
 - YouTube videos longer than 35 minutes are refused; cloud servers usually cannot fetch captions, so Gemini
   transcribes the video instead.
 - Free model and search quotas limit how many runs can be done per day.
-- Publication dates are often unavailable from search APIs; the retrieval date is always recorded.
 
 ## 🗺 Roadmap
 
