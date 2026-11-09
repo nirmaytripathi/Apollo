@@ -481,7 +481,7 @@ are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 **Nirmay Tripathi**
 
-[LinkedIn](www.linkedin.com/in/nirmay-tripathi-0b4408377) · [GitHub](https://github.com/nirmaytripathi)
+[LinkedIn](https://www.linkedin.com/in/nirmay-tripathi-0b4408377) · [GitHub](https://github.com/nirmaytripathi)
 
 **Team Members**
 
