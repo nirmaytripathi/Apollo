@@ -1,0 +1,49 @@
+# Apollo for small free servers (Render free: 512 MB RAM). Same app as Dockerfile, without PyTorch:
+# embeddings use the same all-MiniLM-L6-v2 model through ONNX Runtime (EMBED_BACKEND=onnx).
+# Measured on Windows with requirements-render.txt: ~300 MB peak embedding 2,000 sentences, 457-540 MB peak
+# during full research runs (Windows working set). Not yet measured on Linux; 512 MB is tight.
+# MALLOC_ARENA_MAX=2 limits glibc's per-thread heaps, which otherwise inflate a multi-threaded Python process.
+# Render free has 0.1 CPU: embedding every sentence of every source before Hermes' review took minutes there.
+# PASSAGE_RANKING=keyword picks passages by shared words (no embedding) and VERIFY_MAX_SENTENCES=12 compares
+# each claim with its 12 best keyword matches per source. Review: 0 instead of 1,124 sentences embedded on a saved
+# run. Verification over 115 saved claims: 2,688 instead of 21,397 sentences compared, same partial/not-found
+# decision for 115 of 115 (same best sentence for 108). Claims are verified 4 at a time (VERIFY_WORKERS).
+# EXTRACT_ORDER=provider_first uses Tavily's page text instead of downloading and parsing each page (15 pages: 6.6
+# CPU-seconds, about a minute here, down to ~0); pages without it are still downloaded, 2 at a time, at most 1 MB.
+# EMBED_WARM_UP=true loads the embedding model (2.9 CPU-seconds) while a run plans and searches, not at verification.
+# Secrets (API keys, JWT_SECRET, DATABASE_URL) come from the host's environment, never from this image.
+
+# 1) Build the frontend
+FROM node:22-slim AS web
+WORKDIR /web
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# 2) Python app
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1 \
+    MALLOC_ARENA_MAX=2 \
+    EMBED_BACKEND=onnx \
+    PASSAGE_RANKING=keyword \
+    VERIFY_MAX_SENTENCES=12 \
+    EXTRACT_ORDER=provider_first \
+    EXTRACT_WORKERS=2 \
+    MAX_PAGE_BYTES=1000000 \
+    EMBED_WARM_UP=true \
+    FASTEMBED_CACHE_PATH=/app/.fastembed \
+    OUTPUT_DIR=/tmp/apollo-output
+WORKDIR /app
+
+COPY backend/requirements-render.txt backend/requirements-render.txt
+RUN pip install --no-cache-dir -r backend/requirements-render.txt
+
+COPY . .
+COPY --from=web /web/dist ./frontend/dist
+
+# Fetch the embedding model at build time so the first research run does not wait for a download.
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2')"
+
+# Render sets PORT (10000 by default). The Python code lives in backend/; --app-dir puts it on the import path.
+CMD ["sh", "-c", "uvicorn api:app --app-dir backend --host 0.0.0.0 --port ${PORT:-10000}"]

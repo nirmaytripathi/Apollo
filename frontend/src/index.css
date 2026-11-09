@@ -1,0 +1,689 @@
+@import "tailwindcss";
+
+/* APOLLO design tokens: a light, paper-like scientific interface. One blue accent; amber and
+   red only for warnings and failures; emerald only for verified outcomes. Every status also
+   carries a text label, so colour is never the only signal.
+   Contrast: ink #111318 and muted #68717D on #FFFFFF / #F5F6F7 are above WCAG AA 4.5:1.
+   The spec's #4C9AFF / #3B82F6 blues are below 4.5:1 for small text on white, so they are used
+   for fills, borders and focus only, and blue TEXT uses --color-accent-ink. */
+@theme {
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-app: #e8f1f7;        /* application background */
+  --color-workspace: #eef5fb;  /* workspace background */
+  --color-surface: #fbfdff;    /* primary surface */
+  --color-surface-2: #e4eff5;  /* secondary surface */
+  --color-ink: #10203b;        /* primary text */
+  --color-muted: #607087;      /* secondary text */
+  --color-accent: #d5f8f1;     /* mint action and selection */
+  --color-accent-strong: #82dfcf;
+  --color-accent-ink: #087b6c; /* teal for text on light surfaces */
+  --color-line: #10203b;
+  --color-hair: rgb(16 32 59 / 0.22);
+  --color-warn: #f0b74b;
+  --color-warn-ink: #8a5a00;
+  --color-err: #ef6673;
+  --color-err-ink: #b42335;
+  --color-ok: #2f9e6b;
+  --color-ok-ink: #17694a;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-app font-sans text-ink antialiased;
+  }
+  ::selection {
+    background: rgb(130 223 207 / 0.4);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent-strong);
+    outline-offset: 2px;
+  }
+}
+
+/* Uppercase technical label used for system metadata. */
+@utility label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* ---------------------------------------------------------------- motion
+   Motion carries meaning only: feedback on a control, a state that changed, work in progress.
+   Feedback 120 ms, state changes 200 ms, progress fills 500 ms, all on a decelerating curve
+   (no bounce). Colour changes run for everyone; movement and loops only without
+   prefers-reduced-motion, so reduced-motion users keep every state change but nothing moves. */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-feedback: 120ms;
+  --dur-state: 200ms;
+  --dur-progress: 500ms;
+}
+
+@layer base {
+  /* Hover, focus and status colours fade instead of snapping. */
+  a, button, select, input, textarea, summary, [role="tab"] {
+    transition-property: color, background-color, border-color, text-decoration-color, box-shadow, opacity;
+    transition-duration: var(--dur-state);
+    transition-timing-function: var(--ease-out);
+  }
+}
+
+/* A status label or panel whose state changes cross-fades its colours. */
+@utility state-fade {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: var(--dur-state);
+  transition-timing-function: var(--ease-out);
+}
+
+/* Progress that grows from the left (scaleX, so no layout work); set --p between 0 and 1. */
+@utility grow-x {
+  transform-origin: left center;
+  transform: scaleX(var(--p, 0));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Buttons settle 1px when pressed: the click registered. */
+  button:not(:disabled):active, [role="button"]:active { transform: translateY(1px); transition-duration: var(--dur-feedback); }
+  button { transition-property: color, background-color, border-color, text-decoration-color, box-shadow, opacity, transform; }
+
+  .grow-x { transition: transform var(--dur-progress) var(--ease-out); }
+
+  /* An arrow in a control leans toward where it goes. */
+  .nudge { display: inline-block; transition: transform var(--dur-state) var(--ease-out); }
+  :is(a, button):hover .nudge { transform: translateX(3px); }
+
+  /* Nav icons lift slightly toward the label on hover. */
+  .nav-icon { transition: transform var(--dur-state) var(--ease-out), color var(--dur-state) var(--ease-out); }
+  a:hover .nav-icon { transform: translateX(2px); }
+
+  /* The active nav marker draws in from its centre. */
+  @keyframes marker-in { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .nav-marker { animation: marker-in var(--dur-state) var(--ease-out); }
+
+  /* A new page arrives with a short fade (no movement: the layout does not shift). */
+  @keyframes page-fade { from { opacity: 0; } to { opacity: 1; } }
+  .page-in { animation: page-fade 220ms var(--ease-out); }
+
+  /* The working agent: a light sweeps along the card's foot while it works, and its status
+     dot sends out a soft ring. Both stop the moment the agent goes idle or finishes. */
+  @keyframes agent-sweep { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+  .agent-active { position: relative; overflow: hidden; }
+  .agent-active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-accent-strong), transparent);
+    animation: agent-sweep 1.6s var(--ease-out) infinite;
+  }
+  @keyframes dot-ring { from { box-shadow: 0 0 0 0 rgb(59 130 246 / 0.45); } to { box-shadow: 0 0 0 6px rgb(59 130 246 / 0); } }
+  .dot-live { animation: dot-ring 1.6s var(--ease-out) infinite; }
+  /* A finished agent's dot settles in once (scale, no bounce). */
+  @keyframes dot-settle { from { transform: scale(0.4); } to { transform: scale(1); } }
+  .dot-done { animation: dot-settle 320ms var(--ease-out); }
+
+  /* The current research stage, and running progress bars, carry a slow sheen: work is under way. */
+  @keyframes sheen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  .sheen {
+    background-image: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.55) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: sheen 2.2s linear infinite;
+  }
+
+  @keyframes caret-blink { 50% { opacity: 0; } }
+  .caret { animation: caret-blink 1s steps(1) infinite; }
+
+  /* New lines in a live list arrive with a fade and a 3px settle. */
+  @keyframes feed-fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+  .feed-in { animation: feed-fade 260ms var(--ease-out); }
+
+  @keyframes badge-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+  .stagger-in {
+    animation: badge-in 220ms var(--ease-out) both;
+    animation-delay: calc(min(var(--i, 0), 8) * 50ms); /* capped: a long list never waits long */
+  }
+}
+
+/* Printing a report (Final Reports → "Save as PDF") prints only the report. */
+@media print {
+  body { background: #fff; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  a { color: inherit; text-decoration: none; }
+}
+
+/* Neo-brutalist visual layer -------------------------------------------------
+   Presentation only: API, auth, routing, SSE, report and download behavior
+   remain owned by the existing React components. */
+:root {
+  --neo-shadow: 4px 4px 0 var(--color-ink);
+  --neo-shadow-small: 3px 3px 0 var(--color-ink);
+}
+
+/* Workspace: a light base with the same wave composition at low strength (cyan 0.06-0.10, periwinkle
+   0.04-0.07), so cards stay distinct and text keeps its contrast. No blur: it costs every scrolled frame. */
+body {
+  background: #f7fafd;
+}
+
+.neo-workspace {
+  background:
+    radial-gradient(ellipse at 70% 3%, rgb(82 218 211 / 10%) 0, rgb(82 218 211 / 4%) 23%, transparent 46%),
+    radial-gradient(ellipse at 98% 1%, rgb(119 142 239 / 7%) 0, rgb(119 142 239 / 2%) 24%, transparent 44%),
+    linear-gradient(180deg, #f7fafd 0, #f7fafd 52%, #f0f7fa 100%);
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.neo-workspace::before {
+  background:
+    linear-gradient(162deg, transparent 20%, rgb(93 221 214 / 8%) 38%, rgb(111 222 225 / 2%) 50%, transparent 68%),
+    linear-gradient(166deg, transparent 26%, rgb(116 151 237 / 6%) 43%, rgb(164 178 244 / 2%) 54%, transparent 72%);
+  content: "";
+  height: 330px;
+  pointer-events: none;
+  position: absolute;
+  right: -7%;
+  top: 0;
+  transform: rotate(-3deg);
+  width: 94%;
+  z-index: -1;
+}
+
+.neo-main {
+  position: relative;
+  z-index: 1;
+}
+
+.neo-sidebar {
+  overflow: hidden;
+  position: relative;
+}
+
+.neo-sidebar::after {
+  background:
+    radial-gradient(ellipse at 15% 100%, rgb(50 189 207 / 10%) 0 17%, transparent 48%),
+    radial-gradient(ellipse at 80% 108%, rgb(85 133 232 / 7%) 0 18%, transparent 46%);
+  bottom: 52px;
+  clip-path: polygon(0 45%, 22% 28%, 48% 42%, 71% 25%, 100% 39%, 100% 100%, 0 100%);
+  content: "";
+  height: 145px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+  z-index: 0;
+}
+
+.neo-sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+.neo-brand-mark {
+  align-items: center;
+  background: var(--color-accent);
+  border: 2px solid var(--color-ink);
+  box-shadow: var(--neo-shadow-small);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.neo-topbar {
+  background: rgb(251 253 255 / 96%); /* nearly opaque instead of a backdrop blur, which re-renders on every scroll */
+}
+
+.neo-page-title {
+  font-size: clamp(2.1rem, 4vw, 3.5rem);
+}
+
+.neo-panel,
+.neo-report {
+  box-shadow: var(--neo-shadow);
+}
+
+.neo-stat {
+  box-shadow: 2px 2px 0 var(--color-ink);
+}
+
+.neo-button {
+  transition: background-color 160ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+/* Primary actions. These rules sit outside Tailwind's layers, so they win over the utility classes in
+   btn.primary without !important. Disabled stays neutral: no mint, no shadow, no press. */
+.neo-button-primary:not(:disabled) {
+  background: #d5f8f1;
+  border-color: #10203b;
+  box-shadow: 3px 3px 0 #10203b;
+  color: #10203b;
+}
+
+.neo-button-primary:hover:not(:disabled) {
+  background: #baf3e8;
+}
+
+.neo-button-primary:active:not(:disabled) {
+  box-shadow: 1px 1px 0 #10203b;
+  transform: translate(2px, 2px);
+}
+
+.neo-button-primary:disabled {
+  background: var(--color-surface-2);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Active sidebar link: a bordered mint card. Inactive links keep a transparent border of the same width,
+   so selecting one never shifts the text. Used by the desktop sidebar and the mobile menu (same Sidebar). */
+.nav-link {
+  border: 1.5px solid transparent;
+}
+
+/* No translate: the links sit in a scrolling list (overflow-y: auto, which also clips horizontally), and a
+   -1px lift pushed the FIRST item's top border outside it, so Dashboard showed a cut top edge. The card stays
+   inside the list; .nav-list's top padding and the links' side margin leave room for the border and shadow. */
+.nav-active-card {
+  background: #d5f8f1;
+  border-color: #10203b;
+  box-shadow: 3px 3px 0 #10203b;
+  color: #10203b;
+  z-index: 1; /* its shadow paints over the next link's hover background */
+}
+
+.nav-list {
+  padding-top: 4px;
+}
+
+/* the page number and icon go navy too; the live-runs badge (it has an aria-label) keeps its white text */
+.nav-active-card svg,
+.nav-active-card > span:not([aria-label]) {
+  color: #10203b;
+}
+
+/* Research depth: Focused and Deep. Only the selected one gets the mint card and hard shadow. */
+.depth-card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-line);
+  transition: background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.depth-card-selected {
+  background: #d5f8f1;
+  border-color: #10203b;
+  box-shadow: 3px 3px 0 #10203b;
+  color: #10203b;
+  transform: translate(-2px, -2px);
+}
+
+/* Agent cards (AgentStrip): navy border, pale surface, numbered mint strip, status label by state. */
+.agent-status-card {
+  background: #f4fbfa;
+  border: 1.5px solid #10203b;
+}
+
+.agent-number-strip {
+  align-items: flex-start;
+  background: #d5f8f1;
+  border-right: 1.5px solid #10203b;
+  color: #10203b;
+  display: flex;
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  justify-content: center;
+  padding-top: 11px;
+  width: 30px;
+}
+
+.agent-status-label {
+  border: 1px solid var(--color-hair);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 0 5px;
+  text-transform: uppercase;
+}
+
+.agent-status-active {
+  box-shadow: 3px 3px 0 #10203b;
+}
+
+.agent-status-active .agent-status-label {
+  background: #d5f8f1;
+  border-color: #10203b;
+  color: #10203b;
+}
+
+.agent-status-done .agent-status-label {
+  border-color: var(--color-ok);
+  color: var(--color-ok-ink);
+}
+
+.agent-status-error {
+  border-color: var(--color-err-ink);
+}
+
+.agent-status-error .agent-status-label {
+  border-color: var(--color-err-ink);
+  color: var(--color-err-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .depth-card-selected,
+  .neo-button-primary:active:not(:disabled) {
+    transform: none;
+  }
+
+  .depth-card {
+    transition: none;
+  }
+}
+
+.neo-field {
+  background: rgb(238 245 251 / 88%);
+}
+
+@media (max-width: 640px) {
+  .neo-panel,
+  .neo-report {
+    box-shadow: 3px 3px 0 var(--color-ink);
+  }
+}
+
+@media print {
+  .neo-report {
+    box-shadow: none;
+  }
+}
+/* Apollo Flight: the waiting mini-game (components/ResearchMiniGame.tsx), shown while a run is busy. */
+.research-game {
+  background: var(--color-surface);
+  border: 2px solid var(--color-ink);
+  bottom: 20px;
+  box-shadow: 7px 7px 0 var(--color-ink);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  position: fixed;
+  right: 20px;
+  width: 356px;
+  z-index: 60;
+}
+
+.research-game-header {
+  align-items: center;
+  background: var(--color-accent);
+  border-bottom: 1.5px solid var(--color-ink);
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 13px;
+}
+
+.research-game-header h2 {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  margin-top: 3px;
+}
+
+.research-game-header p {
+  color: var(--color-muted);
+  font-size: 9px;
+  margin-top: 3px;
+}
+
+.research-game-window-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.research-game-window-actions button {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-ink);
+  display: flex;
+  font-family: var(--font-mono);
+  height: 27px;
+  justify-content: center;
+  width: 29px;
+}
+
+.research-game-status {
+  border-bottom: 1.5px solid var(--color-ink);
+  padding: 10px 13px;
+}
+
+.research-game-status > div:first-child {
+  align-items: center;
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  justify-content: space-between;
+  text-transform: uppercase;
+}
+
+.research-game-status span {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+}
+
+.research-game-live-dot {
+  background: var(--color-ok);
+  border-radius: 50%;
+  display: inline-block;
+  height: 7px;
+  width: 7px;
+}
+
+.research-game-progress {
+  background: #d8e5ea;
+  border: 1px solid var(--color-ink);
+  height: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.research-game-progress i {
+  background: var(--color-accent);
+  display: block;
+  height: 100%;
+  transition: width .45s ease;
+}
+
+.research-game-status p {
+  color: var(--color-muted);
+  font-size: 9px;
+  margin-top: 6px;
+}
+
+.research-game-canvas {
+  background: transparent;
+  border: 0;
+  display: block;
+  padding: 12px 16px 0;
+  width: 100%;
+}
+
+.research-game-canvas canvas {
+  border: 1.5px solid var(--color-ink);
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.research-game-footer {
+  align-items: stretch;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 62px 62px 1fr;
+  padding: 10px 16px;
+}
+
+.research-game-footer > div {
+  border: 1.5px solid var(--color-ink);
+  padding: 6px 7px;
+}
+
+.research-game-footer span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+.research-game-footer strong {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.research-game-progress-link {
+  align-items: center;
+  background: var(--color-ink);
+  border: 0;
+  color: var(--color-surface);
+  display: flex;
+  font-size: 10px;
+  justify-content: center;
+  padding: 10px;
+  width: 100%;
+}
+
+.research-game-progress-link:hover {
+  color: var(--color-accent);
+}
+
+.research-game-minimized {
+  align-items: center;
+  background: var(--color-accent);
+  border: 2px solid var(--color-ink);
+  bottom: 20px;
+  box-shadow: 4px 4px 0 var(--color-ink);
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+  padding: 11px 13px;
+  position: fixed;
+  right: 20px;
+  z-index: 60;
+}
+
+.research-game-minimized b {
+  border-left: 1px solid var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  margin-left: 4px;
+  padding-left: 10px;
+}
+
+@media (max-width: 640px) {
+  .research-game {
+    bottom: 0;
+    box-shadow: 0 -5px 0 var(--color-ink);
+    left: 0;
+    max-height: 92vh;
+    right: 0;
+    width: 100%;
+  }
+
+  .research-game-canvas {
+    margin-inline: auto;
+    max-width: 360px;
+  }
+
+  .research-game-minimized {
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    width: calc(100% - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .research-game-progress i {
+    transition: none;
+  }
+}
+
+/* Sign-in / create-account screen (auth.tsx). Uses the workspace's wave background (.neo-workspace) and the
+   dashboard's neo-brutalist card language; dark values are in theme-dark.css. */
+.auth-screen {
+  overflow-x: hidden;
+}
+
+.auth-statement {
+  font-size: clamp(2.6rem, 5.2vw, 4.4rem);
+}
+
+.auth-mark {
+  font-size: 26px;
+  height: 56px;
+  width: 56px;
+}
+
+.auth-card {
+  background: var(--color-surface);
+  border: 2px solid var(--color-ink);
+  box-shadow: 8px 8px 0 var(--color-ink);
+}
+
+.auth-tab + .auth-tab {
+  border-left: 2px solid var(--color-ink);
+}
+
+.auth-tab-selected {
+  background: #d5f8f1;
+  color: #10203b;
+  font-weight: 600;
+}
+
+.auth-field {
+  min-height: 44px; /* touch-friendly */
+}
+
+.auth-submit {
+  min-height: 46px;
+}
+
+/* 541-900px: one column; the three benefits sit side by side. */
+@media (min-width: 541px) and (max-width: 900px) {
+  .auth-benefits {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .auth-statement {
+    font-size: 2.35rem;
+  }
+  .auth-card {
+    box-shadow: 5px 5px 0 var(--color-ink);
+  }
+  .auth-mark {
+    height: 48px;
+    width: 48px;
+  }
+}

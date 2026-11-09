@@ -1,0 +1,32 @@
+# Python 3.11 — pinned versions (resolved together; tenacity is constrained by google-genai)
+langgraph==1.2.18
+tavily-python==0.8.5
+requests==2.34.2
+trafilatura==2.3.1
+pypdf==6.21.4  # attached PDF documents (tools/documents.py)
+python-docx==1.2.0  # Word export of a report (reports/docx_export.py)
+python-multipart==0.0.33  # file uploads in FastAPI (POST /api/documents)
+youtube-transcript-api==1.2.4  # YouTube links: the video's captions (tools/video.py)
+tenacity==9.1.4
+python-dotenv==1.2.4
+groq==1.7.0
+google-genai==2.34.0
+pytest==9.2.0
+# Phase 2: claim verification (embeddings), contradiction map
+sentence-transformers==6.2.0
+torch==2.15.0
+numpy==2.4.6
+networkx==3.6.1
+pyvis==0.3.2
+# Phase 3: web API (httpx is needed by FastAPI's TestClient in tests)
+fastapi==0.162.0
+uvicorn==0.54.0
+httpx==0.28.1
+pydantic>=2.0
+# Optional: ONNX embeddings (only needed if EMBED_BACKEND=onnx)
+# fastembed==0.9.1
+# Login: signed session tokens (JWT, HS256)
+PyJWT==2.10.1
+# Database: SQLAlchemy Core over Postgres (Neon, psycopg 3) or local SQLite
+SQLAlchemy==2.0.36
+psycopg[binary]==3.2.3

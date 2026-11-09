@@ -1,0 +1,307 @@
+/* ================================================================ dark theme
+   Opt-in with <html data-theme="dark"> (bulb toggle in the top bar, saved as localStorage "apollo-theme").
+   The light theme in index.css is untouched: every rule here is scoped to :root[data-theme='dark'], and only
+   for screens, so printing (PDF) always uses the light theme. The project's own tokens are remapped, so the
+   Tailwind utilities (bg-surface, text-ink, border-line, ...) follow without new class names.
+   Selected states use a deep teal (#1F5B5D) with light text (#E9F7F5): never light text on pale mint.
+   Contrast on #0C1B29: ink #E9F7F5 15:1, muted #9AABBA 7.6:1, accent-ink #62D1AE 9:1; #E9F7F5 on #1F5B5D 7:1. */
+
+/* Light values for the claim-evidence graph (pages/Claims.tsx): the colours it used before. */
+:root {
+  --graph-verified: #2f9e6b;
+  --graph-partial: #d99a1f;
+  --graph-contradicted: #b42335;
+  --graph-not-found: #ef6673;
+  --graph-unchecked: #9aa1ab;
+  --graph-node: #ffffff;
+  --graph-node-ink: #111318;
+  --graph-node-active: #111318;
+  --graph-node-active-ink: #ffffff;
+  --graph-node-stroke: rgba(17, 19, 24, 0.3);
+  --graph-source: #3b82f6;
+  --graph-label: #111318;
+}
+
+@media screen {
+  :root[data-theme='dark'] {
+    --ink: #e9f7f5;
+    --paper: #07131f;
+    --white: #0c1b29;
+    --acid: #1f5b5d;
+    --muted: #9aabba;
+    --green: #62d1ae;
+    --red: #ff7e72;
+    --yellow: #efbd55;
+
+    --color-app: #07131f;
+    --color-workspace: #07131f;
+    --color-surface: #0c1b29;
+    --color-surface-2: #102333;
+    --color-ink: #e9f7f5;
+    --color-muted: #9aabba;
+    --color-accent: #1f5b5d;        /* selection: deep teal, never pale mint */
+    --color-accent-strong: #30b9b2; /* fills, focus rings, progress */
+    --color-accent-ink: #62d1ae;    /* teal text on dark surfaces */
+    --color-line: #4f6c82;          /* readable border on dark surfaces */
+    --color-hair: rgb(233 247 245 / 0.14);
+    --color-warn: #efbd55;
+    --color-warn-ink: #efbd55;
+    --color-err: #ff7e72;
+    --color-err-ink: #ff9a90;
+    --color-ok: #62d1ae;
+    --color-ok-ink: #62d1ae;
+
+    --dark-select: #1f5b5d;
+    --dark-select-hover: #24696b;
+    --dark-on-select: #e9f7f5;
+    --dark-shadow: #2c4a5f; /* hard shadows: visible on the navy workspace, quieter than a border */
+
+    --neo-shadow: 4px 4px 0 var(--dark-shadow);
+    --neo-shadow-small: 3px 3px 0 var(--dark-shadow);
+
+    --graph-verified: #62d1ae;
+    --graph-partial: #efbd55;
+    --graph-contradicted: #ff6f61;
+    --graph-not-found: #f4a3b4;
+    --graph-unchecked: #8696a6;
+    --graph-node: #102333;
+    --graph-node-ink: #e9f7f5;
+    --graph-node-active: #1f5b5d;
+    --graph-node-active-ink: #e9f7f5;
+    --graph-node-stroke: rgb(233 247 245 / 0.28);
+    --graph-source: #7aa2ff;
+    --graph-label: #c9d6e0;
+
+    color-scheme: dark;
+  }
+
+  :root[data-theme='dark'] body {
+    background: #07131f;
+  }
+
+  :root[data-theme='dark'] ::selection {
+    background: rgb(48 185 178 / 0.35);
+  }
+
+  /* Workspace: the same wave composition on a navy base with subtle teal and periwinkle. No blur. */
+  :root[data-theme='dark'] .neo-workspace {
+    background:
+      radial-gradient(ellipse at 70% 4%, rgba(48, 185, 178, 0.16) 0, rgba(48, 185, 178, 0.05) 23%, transparent 45%),
+      radial-gradient(ellipse at 96% 1%, rgba(92, 112, 205, 0.15) 0, rgba(92, 112, 205, 0.04) 24%, transparent 43%),
+      linear-gradient(180deg, #091725 0, #07131f 52%, #081521 100%);
+  }
+
+  :root[data-theme='dark'] .neo-workspace::before {
+    background:
+      linear-gradient(162deg, transparent 20%, rgb(48 185 178 / 9%) 38%, rgb(48 185 178 / 2%) 50%, transparent 68%),
+      linear-gradient(166deg, transparent 26%, rgb(92 112 205 / 8%) 43%, rgb(92 112 205 / 2%) 54%, transparent 72%);
+  }
+
+  :root[data-theme='dark'] .neo-sidebar::after {
+    background:
+      radial-gradient(ellipse at 15% 100%, rgb(48 185 178 / 10%) 0 17%, transparent 48%),
+      radial-gradient(ellipse at 80% 108%, rgb(92 112 205 / 9%) 0 18%, transparent 46%);
+  }
+
+  /* Top bar: translucent navy. The blur covers only the bar's own small area. */
+  :root[data-theme='dark'] .neo-topbar {
+    background: rgba(9, 23, 37, 0.91);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  :root[data-theme='dark'] .neo-brand-mark {
+    background: var(--dark-select);
+    border-color: var(--color-line);
+    color: var(--dark-on-select);
+  }
+
+  :root[data-theme='dark'] .neo-stat {
+    box-shadow: 2px 2px 0 var(--dark-shadow);
+  }
+
+  :root[data-theme='dark'] .neo-field {
+    background: rgba(7, 19, 31, 0.78);
+  }
+
+  /* Borders written as border-ink (buttons, selected rows) use the readable border colour, not near-white. */
+  :root[data-theme='dark'] .border-ink {
+    border-color: var(--color-line);
+  }
+
+  /* Inverted chips and selected rows (bg-ink / bg-accent-ink with text-white): deep teal with light text. */
+  :root[data-theme='dark'] .bg-ink,
+  :root[data-theme='dark'] .bg-accent-ink,
+  :root[data-theme='dark'] .hover\:bg-ink:hover,
+  :root[data-theme='dark'] .group:hover .group-hover\:bg-accent-ink {
+    background-color: var(--dark-select);
+  }
+  :root[data-theme='dark'] .text-white,
+  :root[data-theme='dark'] .hover\:text-white:hover {
+    color: var(--dark-on-select);
+  }
+  /* "contradicted": solid deep red, still unlike the lighter "not found" red. */
+  :root[data-theme='dark'] .bg-err-ink {
+    background-color: #b8382f;
+  }
+  :root[data-theme='dark'] .border-err-ink {
+    border-color: #ff7e72;
+  }
+  /* Modal backdrops darken the page instead of washing it out. */
+  :root[data-theme='dark'] .bg-ink\/25,
+  :root[data-theme='dark'] .bg-ink\/30 {
+    background-color: rgb(2 8 14 / 0.62);
+  }
+
+  /* Primary button: deep teal when enabled; disabled stays neutral (no teal, no shadow). */
+  :root[data-theme='dark'] .neo-button-primary:not(:disabled) {
+    background: var(--dark-select);
+    border-color: var(--color-line);
+    box-shadow: 3px 3px 0 var(--dark-shadow);
+    color: var(--dark-on-select);
+  }
+  :root[data-theme='dark'] .neo-button-primary:hover:not(:disabled) {
+    background: var(--dark-select-hover);
+  }
+  :root[data-theme='dark'] .neo-button-primary:active:not(:disabled) {
+    box-shadow: 1px 1px 0 var(--dark-shadow);
+  }
+  :root[data-theme='dark'] .neo-button-primary:disabled {
+    background: #15293a;
+    border-color: #2f4659;
+    box-shadow: none;
+    color: #7f92a3;
+  }
+
+  /* Active sidebar link and selected depth card. */
+  :root[data-theme='dark'] .nav-active-card,
+  :root[data-theme='dark'] .depth-card-selected {
+    background: var(--dark-select);
+    border-color: var(--color-line);
+    box-shadow: 3px 3px 0 var(--dark-shadow);
+    color: var(--dark-on-select);
+  }
+  :root[data-theme='dark'] .nav-active-card svg,
+  :root[data-theme='dark'] .nav-active-card > span:not([aria-label]),
+  :root[data-theme='dark'] .depth-card-selected .text-muted,
+  :root[data-theme='dark'] .depth-card-selected .text-ink {
+    color: var(--dark-on-select);
+  }
+
+  /* Agent cards (AgentStrip). */
+  :root[data-theme='dark'] .agent-status-card {
+    background: var(--color-surface);
+    border-color: var(--color-line);
+  }
+  :root[data-theme='dark'] .agent-number-strip {
+    background: var(--dark-select);
+    border-right-color: var(--color-line);
+    color: var(--dark-on-select);
+  }
+  :root[data-theme='dark'] .agent-status-active {
+    box-shadow: 3px 3px 0 var(--dark-shadow);
+  }
+  :root[data-theme='dark'] .agent-status-active .agent-status-label {
+    background: var(--dark-select);
+    border-color: var(--color-line);
+    color: var(--dark-on-select);
+  }
+
+  /* The depth radios and approval checkbox are tinted navy/blue for the light theme; on dark use the teal. */
+  :root[data-theme='dark'] .accent-\[\#10203b\],
+  :root[data-theme='dark'] .accent-\[\#3b82f6\] {
+    accent-color: #62d1ae;
+  }
+
+  :root[data-theme='dark'] .sheen {
+    background-image: linear-gradient(100deg, transparent 30%, rgb(233 247 245 / 0.1) 50%, transparent 70%);
+  }
+
+  /* Apollo Flight: the panel and its controls follow the dark UI; the canvas world keeps its light sky. */
+  :root[data-theme='dark'] .research-game {
+    border-color: var(--color-line);
+    box-shadow: 7px 7px 0 var(--dark-shadow);
+  }
+  :root[data-theme='dark'] .research-game-minimized {
+    background: var(--dark-select);
+    border-color: var(--color-line);
+    box-shadow: 4px 4px 0 var(--dark-shadow);
+    color: var(--dark-on-select);
+  }
+  :root[data-theme='dark'] .research-game-header {
+    background: var(--dark-select);
+    border-bottom-color: var(--color-line);
+    color: var(--dark-on-select);
+  }
+  :root[data-theme='dark'] .research-game-header .label,
+  :root[data-theme='dark'] .research-game-header p {
+    color: #c3d6dc;
+  }
+  :root[data-theme='dark'] .research-game-window-actions button,
+  :root[data-theme='dark'] .research-game-footer > div,
+  :root[data-theme='dark'] .research-game-canvas canvas,
+  :root[data-theme='dark'] .research-game-minimized b {
+    border-color: var(--color-line);
+  }
+  :root[data-theme='dark'] .research-game-window-actions button {
+    background: var(--color-surface);
+    color: var(--color-ink);
+  }
+  :root[data-theme='dark'] .research-game-status {
+    border-bottom-color: var(--color-line);
+  }
+  :root[data-theme='dark'] .research-game-progress {
+    background: #102333;
+    border-color: var(--color-line);
+  }
+  :root[data-theme='dark'] .research-game-progress i {
+    background: var(--color-accent-strong);
+  }
+
+  /* Sign-in screen: light borders on the dark card, deep teal selected tab, light-bordered logo. */
+  :root[data-theme='dark'] .auth-card {
+    border-color: #e9f7f5;
+    box-shadow: 8px 8px 0 var(--dark-shadow);
+  }
+  :root[data-theme='dark'] .auth-tab + .auth-tab,
+  :root[data-theme='dark'] .auth-card .border-ink {
+    border-color: #e9f7f5;
+  }
+  :root[data-theme='dark'] .auth-tab-selected {
+    background: var(--dark-select);
+    color: var(--dark-on-select);
+  }
+  :root[data-theme='dark'] .auth-mark {
+    border-color: #e9f7f5;
+    box-shadow: 3px 3px 0 var(--dark-shadow);
+  }
+  @media (max-width: 540px) {
+    :root[data-theme='dark'] .auth-card {
+      box-shadow: 5px 5px 0 var(--dark-shadow);
+    }
+  }
+
+  /* Browser autofill paints its own pale background: keep autofilled text readable on the dark fields. */
+  :root[data-theme='dark'] input:-webkit-autofill,
+  :root[data-theme='dark'] input:-webkit-autofill:hover,
+  :root[data-theme='dark'] input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e9f7f5;
+    box-shadow: 0 0 0 1000px #0c1b29 inset;
+    caret-color: #e9f7f5;
+  }
+
+  @media (max-width: 640px) {
+    :root[data-theme='dark'] .neo-panel,
+    :root[data-theme='dark'] .neo-report {
+      box-shadow: 3px 3px 0 var(--dark-shadow);
+    }
+    :root[data-theme='dark'] .research-game {
+      box-shadow: 0 -5px 0 var(--dark-shadow);
+    }
+  }
+}
+
+/* Theme toggle in the top bar: moon + "Dark" in light, sun + "Light" in dark; the sun is amber. */
+.theme-toggle[aria-pressed='true'] svg {
+  color: #efbd55;
+}

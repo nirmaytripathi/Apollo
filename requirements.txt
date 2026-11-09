@@ -1,0 +1,48 @@
+# Apollo · Multi-Agent Deep Research
+# Everything needed to run the project locally on Python 3.11.
+
+# Core Agent & Graph Orchestration
+langgraph==1.2.18
+tenacity==9.1.4
+
+# Search & Web Scraping
+tavily-python==0.8.5
+requests==2.34.2
+trafilatura==2.3.1
+youtube-transcript-api==1.2.4
+
+# Document Processing & Export
+pypdf==6.21.4
+python-docx==1.2.0
+
+# LLM Providers
+groq==1.7.0
+google-genai==2.34.0
+
+# Embeddings & Verification (PyTorch backend)
+sentence-transformers==6.2.0
+torch==2.15.0
+numpy==2.4.6
+networkx==3.6.1
+pyvis==0.3.2
+
+# Optional low-memory ONNX backend (only if EMBED_BACKEND=onnx)
+# fastembed==0.9.1
+
+# Web Framework & API Server
+fastapi==0.162.0
+uvicorn==0.54.0
+httpx==0.28.1
+python-multipart==0.0.33
+pydantic>=2.0
+
+# Auth & Environment
+python-dotenv==1.2.4
+PyJWT==2.10.1
+
+# Database (Postgres Neon / SQLite)
+SQLAlchemy==2.0.36
+psycopg[binary]==3.2.3
+
+# Testing
+pytest==9.2.0

@@ -1,0 +1,13 @@
+# Never ship secrets or local data into the image.
+.env
+output/
+*.db
+
+# Local tooling and build output (the Dockerfile rebuilds the frontend itself)
+.venv/
+.git/
+.vscode/
+__pycache__/
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
